@@ -1,5 +1,6 @@
 import {v2 as cloudinary} from "cloudinary"
 import fs from "fs"
+import path from "path"
 
 cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -11,12 +12,17 @@ const uploadOnCloudinary = async (localFilePath) => {
     try {
         if(!localFilePath) return null;
         // uploading local file on cloudinary
+        // const absolutePath = path.resolve(localFilePath);
+        // console.log(absolutePath);
         const response  = await cloudinary.uploader.upload(localFilePath, {
             resource_type : 'auto'
         })
+        // console.log(localFilePath);
         console.log("File is uploaded on cloudinary ", response.url);
+        fs.unlinkSync(localFilePath);
         return response;
     } catch (error) {
+          console.error("Cloudinary upload error:", error);
         fs.unlinkSync(localFilePath) // since error has been encountered, 
         // the localFilePath is available but could be that the file is corrupted or malicious -  so better we unlink it
         return null;

@@ -14,16 +14,16 @@ const registerUser = asyncHandler( async (req,res) => {
     // check if user creation was successfully
     // return response
 
-    const {userName, fullName, email, password} = req.body
+    const {username, fullName, email, password} = req.body
 
     if(
-        [fullName, userName, email, password].some((field) => field?.trim() === "")
+        [fullName, username, email, password].some((field) => field?.trim() === "")
     ){
         throw new ApiError(400, "All fields are required")
     }
 
     const existedUser = await User.findOne({
-        $or : [{userName}, {email}]
+        $or : [{username}, {email}]
     })
 
     if(existedUser){
@@ -31,14 +31,20 @@ const registerUser = asyncHandler( async (req,res) => {
     }
 
     const avatarImagePath = req.files?.avatar[0]?.path;
-    const coverImagePath = req.files?.coverImage[0]?.path;
+    // const coverImagePath = req.files?.coverImage[0]?.path;
+
+    let coverImagePath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImagePath = req.files.coverImage[0].path;
+    }
+
+    // console.log(req.files);
 
     if(!avatarImagePath){
         throw new ApiError(400, "Avatar Image is required");
     }
-
     const avatar = await uploadOnCloudinary(avatarImagePath);
-    const coverImage = await uploadOnCloudinary(avatarImagePath);
+    const coverImage = await uploadOnCloudinary(coverImagePath);
 
     if(!avatar){
         throw new ApiError(500, "Avatar Image was not uploaded successfully - User not registered")
@@ -50,7 +56,7 @@ const registerUser = asyncHandler( async (req,res) => {
         password : password,
         avatar : avatar.url,
         coverImage : coverImage?.url || "",
-        username : username.toLowercase()
+        username : username.toLowerCase()
     })
 
     const createdUser = await User.findById(user._id).select(
